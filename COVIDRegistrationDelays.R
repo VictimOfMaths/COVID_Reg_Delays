@@ -8,6 +8,47 @@ library(ggtext)
 
 #Download all the weeks of registration/occurrence data
 temp <- tempfile()
+source <- "https://www.ons.gov.uk/file?uri=%2fpeoplepopulationandcommunity%2fhealthandsocialcare%2fcausesofdeath%2fdatasets%2fdeathregistrationsandoccurrencesbylocalauthorityandhealthboard%2f2020/lahbtablesweek481.xlsx"
+temp <- curl_download(url=source, destfile=temp, quiet=FALSE, mode="wb")
+
+week48 <- read_excel(temp, sheet="Occurrences - All data", col_names=FALSE)[-c(1:4),] %>% 
+  select(-c(2))
+
+colnames(week48) <- c("code", "name", "cause", "week", "location", "deaths48")
+week48$deaths48 <- as.numeric(week48$deaths48)
+
+week47 <- week48 %>% 
+  mutate(name=case_when(
+    code %in% c("E07000004", "E07000005", "E07000006", "E07000007") ~ "Buckinghamshire",
+    TRUE ~ name),
+    code=case_when(
+      code %in% c("E07000004", "E07000005", "E07000006", "E07000007") ~ "E06000060",
+      TRUE ~ code)) %>% 
+  group_by(name, code, cause, week, location) %>% 
+  summarise(deaths48=sum(deaths48))
+
+temp <- tempfile()
+source <- "https://www.ons.gov.uk/file?uri=%2fpeoplepopulationandcommunity%2fhealthandsocialcare%2fcausesofdeath%2fdatasets%2fdeathregistrationsandoccurrencesbylocalauthorityandhealthboard%2f2020/lahbtablesweek47.xlsx"
+temp <- curl_download(url=source, destfile=temp, quiet=FALSE, mode="wb")
+
+week47 <- read_excel(temp, sheet="Occurrences - All data", col_names=FALSE)[-c(1:4),] %>% 
+  select(-c(2))
+
+colnames(week47) <- c("code", "name", "cause", "week", "location", "deaths47")
+week47$deaths47 <- as.numeric(week47$deaths47)
+
+week47 <- week47 %>% 
+  mutate(name=case_when(
+    code %in% c("E07000004", "E07000005", "E07000006", "E07000007") ~ "Buckinghamshire",
+    TRUE ~ name),
+    code=case_when(
+      code %in% c("E07000004", "E07000005", "E07000006", "E07000007") ~ "E06000060",
+      TRUE ~ code)) %>% 
+  group_by(name, code, cause, week, location) %>% 
+  summarise(deaths47=sum(deaths47))
+
+
+temp <- tempfile()
 source <- "https://www.ons.gov.uk/file?uri=%2fpeoplepopulationandcommunity%2fhealthandsocialcare%2fcausesofdeath%2fdatasets%2fdeathregistrationsandoccurrencesbylocalauthorityandhealthboard%2f2020/lahbtablesweek46.xlsx"
 temp <- curl_download(url=source, destfile=temp, quiet=FALSE, mode="wb")
 
@@ -708,6 +749,8 @@ data <- merge(week15, week16, all=TRUE) %>%
   merge(week44, all=TRUE) %>% 
   merge(week45, all=TRUE) %>%
   merge(week46, all=TRUE) %>%
+  merge(week47, all=TRUE) %>%
+  merge(week48, all=TRUE) %>%
   mutate(week=as.numeric(week), deaths31=as.numeric(deaths31)) %>% 
   #get rid of locations
   group_by(code, name, cause, week) %>% 
@@ -745,7 +788,7 @@ data <- bind_rows(data, data.e, data.w, data.ew)
 
 write.csv(data, "COVID_Reg_Delays/data.csv")
 
-plotweek <- 46
+plotweek <- 48
 LA <- "England & Wales"
 plotcause <- "All causes"
 
@@ -832,10 +875,3 @@ data %>%
   labs(title=paste0("Delays in deaths registrations in ", LA),
        subtitle=paste0("Week of occurrence for deaths from ", plotcause, " by week or registration.\nDeaths which occurred prior to week 16 (18th April) are excluded."),
        caption="Data from ONS | Plot by @VictimOfMaths")
-
-
-
-
-
-
-
